@@ -1,0 +1,4 @@
+1. Go to http://snap.stanford.edu/data/loc-gowalla.html and download loc-gowalla_totalCheckins.txt.gz
+2. Make index by running the following command:<br/>python make_index.py [path to original Gowalla_totalCheckins.txt] [output path for the grid index file] [output path for deduplicated dataset] [grid size (n x n cells)]
+3. Run knn_linear_scan, knn_grid and knn_grid by running the command:<br/>python knn_search.py [latitude of the query point q] [longitude of the query point q] [output path for deduplicated dataset] [output path for the grid index file] [number of nearest neighbors] [grid size (n x n cells)]
+4. Run knn_R_tree by running the command:<br/>python knn_R_tree.py [latitude of the query point q] [longitude of the query point q] [output path for deduplicated dataset] [number of nearest neighbors]
