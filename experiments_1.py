@@ -23,6 +23,11 @@ for n in list_n:
     make_index.duplicate_elimination(args['data_path'], args['data_path_new'])
     make_index.create_index(args['data_path_new'], args['index_path'], args['n'])
 
+    with open('knn_r_tree_output.csv', 'w') as f:
+        f.write("Algo,k,n,time,NumberOfCellsVisited\n")
+    with open('knn_output.csv', 'w') as f:
+        f.write("Algo,k,n,time,NumberOfCellsVisited\n")
+
     for point in random_query_points:
         if i==0:
             knn_search.knn_linear_scan(point[0], point[1], args['data_path_new'], args['k']) #since n doesn't affect the linear scan, we only run it once for the first n value
