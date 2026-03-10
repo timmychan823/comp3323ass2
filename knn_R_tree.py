@@ -156,4 +156,5 @@ if __name__ == "__main__":
     parser.add_argument("k", type=int,
                         help="number of nearest neighbors")
     args = parser.parse_args()
-    print("knn_R_tree results: ", knn_R_tree(args.x, args.y, args.data_path_new, args.k))
+    result, _ = knn_R_tree(args.x, args.y, args.data_path_new, args.k)
+    print(f"knn_R_tree results: {result}")

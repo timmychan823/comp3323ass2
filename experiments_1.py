@@ -13,6 +13,11 @@ list_n = [10, 50, 100, 150, 200]
 for _ in range(100):
     random_query_points.append((random.uniform(X_MIN, X_MAX), random.uniform(Y_MIN, Y_MAX)))
 
+with open('knn_r_tree_output.csv', 'w') as f:
+    f.write("Algo,k,n,time,NumberOfCellsVisited\n")
+with open('knn_output.csv', 'w') as f:
+    f.write("Algo,k,n,time,NumberOfCellsVisited\n")
+
 for n in list_n:
     args = {'data_path': 'Gowalla_totalCheckins.txt',
             'data_path_new': 'Gowalla_totalCheckinsNew.txt',
@@ -22,11 +27,6 @@ for n in list_n:
 
     make_index.duplicate_elimination(args['data_path'], args['data_path_new'])
     make_index.create_index(args['data_path_new'], args['index_path'], args['n'])
-
-    with open('knn_r_tree_output.csv', 'w') as f:
-        f.write("Algo,k,n,time,NumberOfCellsVisited\n")
-    with open('knn_output.csv', 'w') as f:
-        f.write("Algo,k,n,time,NumberOfCellsVisited\n")
 
     for point in random_query_points:
         if i==0:

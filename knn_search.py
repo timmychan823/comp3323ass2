@@ -171,7 +171,6 @@ def knn_grid_bf(x, y, index_path, k, n):
     result_str = []
     dlow_min_heap = []
     knn_max_heap = []
-    heapq.heapify(dlow_min_heap)
     heapq.heapify(knn_max_heap)
     grid_index = load_grid_index(index_path)
 
@@ -179,7 +178,8 @@ def knn_grid_bf(x, y, index_path, k, n):
 
     for i in range(n):
       for j in range(n):
-        heapq.heappush(dlow_min_heap, (dlow(n, (i, j), x, y), i, j))
+        dlow_min_heap.append((dlow(n, (i, j), x, y), i, j))
+    heapq.heapify(dlow_min_heap)
   
     while len(dlow_min_heap) > 0:
       next_nearest_cell = heapq.heappop(dlow_min_heap)
@@ -279,22 +279,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Linear scan
-    s = time.time()
     result, _ = knn_linear_scan(args.x, args.y, args.data_path_new, args.k)
-    t = time.time()
     print(f"Linear scan results: {result}")
-    print(f"Linear scan time: {(t - s) * 1000:.2f} ms")
 
     # Grid (layer-by-layer)
-    s = time.time()
     result, cells = knn_grid(args.x, args.y, args.index_path, args.k, args.n)
-    t = time.time()
     print(f"Grid (layer-by-layer) results: {result}")
-    print(f"Grid (layer-by-layer) time: {(t - s) * 1000:.2f} ms, cells visited: {cells}")
 
     # Grid (best-first)
-    s = time.time()
     result, cells = knn_grid_bf(args.x, args.y, args.index_path, args.k, args.n)
-    t = time.time()
     print(f"Grid (best-first) results: {result}")
-    print(f"Grid (best-first) time: {(t - s) * 1000:.2f} ms, cells visited: {cells}")
