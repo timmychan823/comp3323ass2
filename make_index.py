@@ -62,8 +62,8 @@ def create_index(data_path_new, index_path, n):
         for line in f:
           lat_lan = [float(x) for x in line.split("\t")[0:2]]
           location_id = int(line.split("\t")[2])
-          row = min(int(((lat_lan[0] - X_MIN) / (X_MAX - X_MIN))*n), n-1)
-          col = min(int(((lat_lan[1] - Y_MIN) / (Y_MAX - Y_MIN))*n), n-1)
+          col = min(int(((lat_lan[0] - X_MIN) / (X_MAX - X_MIN))*n), n-1)
+          row = min(int(((lat_lan[1]-Y_MIN) / (Y_MAX - Y_MIN))*n), n-1)
           grid[(row, col)].append(f'{location_id}_{lat_lan[0]}_{lat_lan[1]}')
     f.close()
     sorted_keys = sorted(grid.keys())

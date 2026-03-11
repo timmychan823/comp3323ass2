@@ -104,30 +104,27 @@ class RTree:
     #using best first search to find the k nearest neighbors of the query point (qx, qy) in the R-tree
     def knn_R_tree(self, qx: float, qy: float, k: int = 1) -> tuple[str, int]:
         s = time.time()
-        dist_knn_q = float('inf')
-        knn_max_heap = []  # max-heap of (negative distance, point) for the k nearest neighbors found so far
+        knn_max_heap = [[float('-inf'),(float('-inf'),float('-inf'),-1)] for _ in range(k)]
         heapq.heapify(knn_max_heap)
         min_heap = [[child.bbox.distance_to_point(qx, qy), child] for child in self.root.children]
         
-        while len(min_heap) != 0 and min_heap[0][0] < dist_knn_q:
+        while len(min_heap) != 0 and min_heap[0][0] < -knn_max_heap[0][0]:
             e = heapq.heappop(min_heap)
             if not e[1].is_leaf:
                 for node in e[1].children:
                     dist_node_q = node.bbox.distance_to_point(qx, qy)
-                    if dist_node_q < dist_knn_q:
+                    if dist_node_q < -knn_max_heap[0][0]:
                         heapq.heappush(min_heap, [dist_node_q, node])
             else:
                 for entry in e[1].children:
                     dist_entry_q = dist(qx, qy, entry[0], entry[1])
-                    if dist_entry_q < dist_knn_q:
+                    if dist_entry_q < -knn_max_heap[0][0]:
                         heapq.heappush(knn_max_heap, [-dist_entry_q, entry])
                         if len(knn_max_heap) > k:
                             heapq.heappop(knn_max_heap)
-                        if len(knn_max_heap) == k:
-                            dist_knn_q = -knn_max_heap[0][0]
         result_str = [int(heapq.heappop(knn_max_heap)[1][2]) for _ in range(len(knn_max_heap))]
         result_str.reverse()
-        result_str = [str(location_id) for location_id in result_str]
+        result_str = [str(location_id) for location_id in result_str if location_id != -1]
 
         t = time.time()
         

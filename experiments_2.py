@@ -16,6 +16,8 @@ with open('knn_r_tree_output.csv', 'w') as f:
     f.write("Algo,k,n,time,NumberOfCellsVisited\n")
 with open('knn_output.csv', 'w') as f:
     f.write("Algo,k,n,time,NumberOfCellsVisited\n")
+with open('results_matching.txt', 'w') as f:
+    f.write("[(x, y), k, n]: r_tree, grid, grid_bf\n")
 
 for k in list_k:
     args = {'data_path': 'Gowalla_totalCheckins.txt',
@@ -28,9 +30,10 @@ for k in list_k:
     make_index.create_index(args['data_path_new'], args['index_path'], args['n'])
 
     for point in random_query_points:
-        knn_search.knn_linear_scan(point[0], point[1], args['data_path_new'], args['k'])
-        knn_search.knn_grid(point[0], point[1], args['index_path'], args['k'], args['n'])
-        knn_search.knn_grid_bf(point[0], point[1], args['index_path'], args['k'], args['n'])
-        knn_R_tree.knn_R_tree(point[0], point[1], args['data_path_new'], args['k'])
+        linear_result, _ = knn_search.knn_linear_scan(point[0], point[1], args['data_path_new'], args['k'])
+        grid_result, _=knn_search.knn_grid(point[0], point[1], args['index_path'], args['k'], args['n'])
+        grid_bf_result, _=knn_search.knn_grid_bf(point[0], point[1], args['index_path'], args['k'], args['n'])
+        r_tree_result, _=knn_R_tree.knn_R_tree(point[0], point[1], args['data_path_new'], args['k'])
 
-
+        with open('results_matching.txt', 'a') as f:
+            f.write(f"({point[0]},{point[1]}), {args['k']}, {args['n']}: {linear_result==r_tree_result} {linear_result==grid_result} {linear_result==grid_bf_result}\n")

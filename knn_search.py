@@ -5,7 +5,7 @@ COMP3323 Assignment 2 - Parts 2, 3 & 4(1): k-NN Search Algorithms
   - knn_grid         (Part 2: layer-by-layer expansion)
   - knn_grid_bf      (Part 3: best-first cell expansion)
 """
-
+from math import sqrt, ceil
 import sys
 import time
 import math
@@ -23,26 +23,48 @@ Y_MIN, Y_MAX = -176.3, 177.5
 def cal_euclidean_distance(x1, y1, x2, y2):
   return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-def dlow(n, cell, x, y):
+def dlow(n, grid_index, cell, x, y): #TODO: this should not be calculated like this, we should take into the account all the points in the cell before calculating euclidean distance, should use a MBR within the cell, grid_index should also be provided
   #c should be in the format of (row, col)
-  x_min = X_MIN + cell[0] * (X_MAX - X_MIN) / n
-  x_max = X_MIN + (cell[0] + 1) * (X_MAX - X_MIN) / n
-  y_min = Y_MIN + cell[1] * (Y_MAX - Y_MIN) / n
-  y_max = Y_MIN + (cell[1] + 1) * (Y_MAX - Y_MIN) / n
+  
+  x_min = grid_index[cell][0][0]
+  x_max = grid_index[cell][0][1]
+  y_min = grid_index[cell][0][2]
+  y_max = grid_index[cell][0][3]
 
-  return min(cal_euclidean_distance(x, y, x_min, y_min),
-             cal_euclidean_distance(x, y, x_min, y_max),
-             cal_euclidean_distance(x, y, x_max, y_min),
-             cal_euclidean_distance(x, y, x_max, y_max))
+  dx = 0.0
+  dy = 0.0
+  if x < x_min:
+      dx = x_min - x
+  elif x > x_max:
+      dx = x - x_max
+  if y < y_min:
+      dy = y_min - y
+  elif y > y_max:
+      dy = y - y_max
+  return sqrt(dx * dx + dy * dy)
 
-def load_grid_index(index_path):
+
+def load_grid_index(index_path, n):
   grid_index = {}
   with open(index_path, 'r') as f:
     for line in f:
       cell_info, points_str = line.strip().split(':')
       cell_row, cell_col = map(int, cell_info.replace('Cell', '').split(','))
       points = [[int(location[0]), float(location[1]), float(location[2])] for location in [string_location.split('_') for string_location in points_str.strip().split()]]
-      grid_index[(cell_row, cell_col)] = points
+      
+      x_min = float('inf')
+      y_min = float('inf')
+      x_max = float('-inf')
+      y_max = float('-inf')
+      if len(points) == 0:
+        x_min, x_max, y_min, y_max = X_MIN + cell_col*((X_MAX - X_MIN)/n), X_MIN + (cell_col+1)*((X_MAX - X_MIN)/n), Y_MIN + cell_row*((Y_MAX - Y_MIN)/n), Y_MIN + (cell_row+1)*((Y_MAX - Y_MIN)/n)
+      else:
+        for point in points:
+          x_min = min(x_min, point[1])
+          y_min = min(y_min, point[2])
+          x_max = max(x_max, point[1])
+          y_max = max(y_max, point[2])
+      grid_index[(cell_row, cell_col)] = ((x_min, x_max, y_min, y_max), points) #TODO: should be ((x_min, x_max, y_min, y_max), points) where (x_min, x_max, y_min, y_max) is the MBR for the cell
   return grid_index
 
 def load_deduplicated_data(data_path_new):
@@ -77,35 +99,35 @@ def knn_grid(x, y, index_path, k, n):
     i = 0
     number_of_cells_visited = 0
     result_str = []
-    knn_max_heap = []
+    knn_max_heap = [(float('-inf'),-1) for _ in range(k)]
     heapq.heapify(knn_max_heap)
-    grid_index = load_grid_index(index_path)
+    grid_index = load_grid_index(index_path, n)
+    #TODO: should add MBR for each cell in the grid index
 
     s = time.time()
 
-    q_cell = {'row': int((x-X_MIN)*n/(X_MAX-X_MIN)), 'col':int((y-Y_MIN)*n/(Y_MAX-Y_MIN))}
+    q_cell = {'col': int((x-X_MIN)*n/(X_MAX-X_MIN)), 'row':int((y-Y_MIN)*n/(Y_MAX-Y_MIN))}
 
     while (q_cell['row'] - i >= 0 or q_cell['row'] + i < n):
-      updated = False
+      is_closer_cell_found = False
       for j in range(max(q_cell['row'] - i, 0), min(q_cell['row'] + i+1, n)):
         if (j == q_cell['row'] - i or j== q_cell['row'] + i):
           for col in range(max(q_cell['col'] - i, 0), min(q_cell['col'] + i+1, n)):
-              if (j, col) in grid_index:
-                if len(knn_max_heap) ==k and dlow(n, (j, col), x, y) > -knn_max_heap[0][0]:
-                  continue
-                
-                number_of_cells_visited += 1 #TODO: check if this should be counted as visited for accessing dlow
+            if (j, col) in grid_index:
 
-                for location in grid_index[(j, col)]:
-                  distance = cal_euclidean_distance(x, y, location[1], location[2])
-                  if len(knn_max_heap) < k:
+              # print("cell: ", (j, col), "dlow: ", dlow(n, grid_index,(j, col), x, y), "current knn max distance: ", -knn_max_heap[0][0] if len(knn_max_heap) > 0 else None) #TODO: remove this print statement
+
+              if dlow(n, grid_index,(j, col), x, y) >= -knn_max_heap[0][0]: #TODO: check if this should be >= or >
+                continue
+              
+              number_of_cells_visited += 1
+              is_closer_cell_found = True
+
+              for location in grid_index[(j, col)][1]:
+                distance = cal_euclidean_distance(x, y, location[1], location[2])
+                if distance < -knn_max_heap[0][0]:
+                    heapq.heappop(knn_max_heap)
                     heapq.heappush(knn_max_heap, (-distance, location[0]))
-                    updated = True
-                  else:
-                    if distance < -knn_max_heap[0][0]:
-                      heapq.heappop(knn_max_heap)
-                      heapq.heappush(knn_max_heap, (-distance, location[0]))
-                      updated = True
         else:
           col_to_scan = []
           if (q_cell['col'] - i >= 0):
@@ -114,28 +136,28 @@ def knn_grid(x, y, index_path, k, n):
             col_to_scan.append(q_cell['col'] + i)
           for col in col_to_scan:
             if (j, col) in grid_index:
-              if len(knn_max_heap) !=0 and dlow(n, (j, col), x, y) > -knn_max_heap[0][0]:
+
+              # print("cell: ", (j, col), "dlow: ", dlow(n, grid_index,(j, col), x, y), "current knn max distance: ", -knn_max_heap[0][0] if len(knn_max_heap) > 0 else None) #TODO: remove this print statement
+
+              if dlow(n, grid_index,(j, col), x, y) >= -knn_max_heap[0][0]: #TODO: check if this should be >= or >
                 continue
 
-              number_of_cells_visited += 1 #TODO: check if this should be counted as visited for accessing dlow
+              number_of_cells_visited += 1
+              is_closer_cell_found = True
 
-              for location in grid_index[(j, col)]:
+              for location in grid_index[(j, col)][1]:
                 distance = cal_euclidean_distance(x, y, location[1], location[2])
-                if len(knn_max_heap) < k:
-                  heapq.heappush(knn_max_heap, (-distance, location[0]))
-                  updated = True
-                else:
-                  if distance < -knn_max_heap[0][0]:
+                if distance < -knn_max_heap[0][0]:
                     heapq.heappop(knn_max_heap)
                     heapq.heappush(knn_max_heap, (-distance, location[0]))
-                    updated = True
-      if updated == False and len(knn_max_heap)==k: 
+
+      if is_closer_cell_found == False: 
         break
       i+=1
     
     result_str = [int(heapq.heappop(knn_max_heap)[1]) for _ in range(len(knn_max_heap))]
     result_str.reverse()
-    result_str = [str(location_id) for location_id in result_str]
+    result_str = [str(location_id) for location_id in result_str if location_id != -1]
 
     t = time.time()
     
@@ -170,36 +192,33 @@ def knn_grid_bf(x, y, index_path, k, n):
     number_of_cells_visited = 0
     result_str = []
     dlow_min_heap = []
-    knn_max_heap = []
+    knn_max_heap = [(float('-inf'),-1) for _ in range(k)]
     heapq.heapify(knn_max_heap)
-    grid_index = load_grid_index(index_path)
+    grid_index = load_grid_index(index_path, n)
 
     s = time.time()
 
     for i in range(n):
       for j in range(n):
-        dlow_min_heap.append((dlow(n, (i, j), x, y), i, j))
+        dlow_min_heap.append((dlow(n, grid_index,(i, j), x, y), i, j))
     heapq.heapify(dlow_min_heap)
   
     while len(dlow_min_heap) > 0:
       next_nearest_cell = heapq.heappop(dlow_min_heap)
-      if len(knn_max_heap) == k and next_nearest_cell[0] > -knn_max_heap[0][0]:
+      if next_nearest_cell[0] >= -knn_max_heap[0][0]: #TODO: check if this should be >= or >
         break
       number_of_cells_visited += 1
       
       if (next_nearest_cell[1], next_nearest_cell[2]) in grid_index:
-        for location in grid_index[(next_nearest_cell[1], next_nearest_cell[2])]:
+        for location in grid_index[(next_nearest_cell[1], next_nearest_cell[2])][1]:
           distance = cal_euclidean_distance(x, y, location[1], location[2])
-          if len(knn_max_heap) < k:
-            heapq.heappush(knn_max_heap, (-distance, location[0]))
-          else:
-            if distance < -knn_max_heap[0][0]:
+          if distance < -knn_max_heap[0][0]:
               heapq.heappop(knn_max_heap)
               heapq.heappush(knn_max_heap, (-distance, location[0]))
 
     result_str = [int(heapq.heappop(knn_max_heap)[1]) for _ in range(len(knn_max_heap))]
     result_str.reverse()
-    result_str = [str(location_id) for location_id in result_str]
+    result_str = [str(location_id) for location_id in result_str if location_id != -1]
 
     t = time.time()
 
@@ -233,18 +252,17 @@ def knn_linear_scan(x, y, data_path_new, k):
 
     s = time.time()
 
-    knn_max_heap = []
+    knn_max_heap = [(float('-inf'),-1) for _ in range(k)]
+    heapq.heapify(knn_max_heap)
+
     for lat, lon, location_id in data:
       distance = cal_euclidean_distance(x, y, lat, lon)
-      if len(knn_max_heap) < k:
-        heapq.heappush(knn_max_heap, (-distance, location_id))
-      else:
-        if distance < -knn_max_heap[0][0]:
+      if distance < -knn_max_heap[0][0]:
           heapq.heappop(knn_max_heap)
           heapq.heappush(knn_max_heap, (-distance, location_id))
     result_str = [int(heapq.heappop(knn_max_heap)[1]) for _ in range(len(knn_max_heap))]
     result_str.reverse()
-    result_str = [str(location_id) for location_id in result_str]
+    result_str = [str(location_id) for location_id in result_str if location_id != -1]
 
     t = time.time()
 
