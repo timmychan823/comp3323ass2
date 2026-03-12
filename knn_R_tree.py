@@ -129,8 +129,8 @@ class RTree:
         t = time.time()
         
         #####for reporting results#####
-        with open('knn_r_tree_output.csv', 'a') as f:
-            f.write(f"knn_R_tree,{k},{None},{(t - s) * 1000:.2f},{None}\n")
+        # with open('knn_r_tree_output.csv', 'a') as f:
+        #     f.write(f"knn_R_tree,{k},{None},{(t - s) * 1000:.2f},{None}\n")
         #####for reporting results#####
 
         return ", ".join(result_str), 0  # number of cells visited is not applicable for R-tree, so we return 0

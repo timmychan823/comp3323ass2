@@ -115,8 +115,6 @@ def knn_grid(x, y, index_path, k, n):
           for col in range(max(q_cell['col'] - i, 0), min(q_cell['col'] + i+1, n)):
             if (j, col) in grid_index:
 
-              # print("cell: ", (j, col), "dlow: ", dlow(n, grid_index,(j, col), x, y), "current knn max distance: ", -knn_max_heap[0][0] if len(knn_max_heap) > 0 else None) #TODO: remove this print statement
-
               if dlow(n, grid_index,(j, col), x, y) >= -knn_max_heap[0][0]: #TODO: check if this should be >= or >
                 continue
               
@@ -136,9 +134,6 @@ def knn_grid(x, y, index_path, k, n):
             col_to_scan.append(q_cell['col'] + i)
           for col in col_to_scan:
             if (j, col) in grid_index:
-
-              # print("cell: ", (j, col), "dlow: ", dlow(n, grid_index,(j, col), x, y), "current knn max distance: ", -knn_max_heap[0][0] if len(knn_max_heap) > 0 else None) #TODO: remove this print statement
-
               if dlow(n, grid_index,(j, col), x, y) >= -knn_max_heap[0][0]: #TODO: check if this should be >= or >
                 continue
 
@@ -162,8 +157,8 @@ def knn_grid(x, y, index_path, k, n):
     t = time.time()
     
     #####for reporting results#####
-    with open('knn_output.csv', 'a') as f:
-      f.write(f"grid,{k},{n},{(t - s) * 1000:.2f},{number_of_cells_visited}\n")
+    # with open('knn_output.csv', 'a') as f:
+    #   f.write(f"grid,{k},{n},{(t - s) * 1000:.2f},{number_of_cells_visited}\n")
     #####for reporting results#####
 
     return ", ".join(result_str), number_of_cells_visited
@@ -223,8 +218,8 @@ def knn_grid_bf(x, y, index_path, k, n):
     t = time.time()
 
     #####for reporting results#####
-    with open('knn_output.csv', 'a') as f:
-      f.write(f"grid_bf,{k},{n},{(t - s) * 1000:.2f},{number_of_cells_visited}\n")
+    # with open('knn_output.csv', 'a') as f:
+    #   f.write(f"grid_bf,{k},{n},{(t - s) * 1000:.2f},{number_of_cells_visited}\n")
     #####for reporting results#####
 
     return ", ".join(result_str), number_of_cells_visited
@@ -267,8 +262,8 @@ def knn_linear_scan(x, y, data_path_new, k):
     t = time.time()
 
     #####for reporting results#####
-    with open('knn_output.csv', 'a') as f:
-      f.write(f"linear,{k},{None},{(t - s) * 1000:.2f},{None}\n")
+    # with open('knn_output.csv', 'a') as f:
+    #   f.write(f"linear,{k},{None},{(t - s) * 1000:.2f},{None}\n")
     #####for reporting results#####
 
     return ", ".join(result_str), 0
